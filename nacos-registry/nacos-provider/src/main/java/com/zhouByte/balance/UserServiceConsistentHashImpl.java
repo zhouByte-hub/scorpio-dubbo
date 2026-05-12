@@ -1,19 +1,20 @@
-package com.zhouByte.balance.provider.service;
+package com.zhouByte.balance;
 
 import com.zhouByte.api.UserService;
 import org.apache.dubbo.config.annotation.DubboService;
 
 @DubboService(
         interfaceClass = UserService.class,
-        group = "balance-random",
-        weight = 100
+        group = "balance-consistenthash",
+        weight = 90
 )
-public class UserServiceRandomImpl implements UserService {
+public class UserServiceConsistentHashImpl implements UserService {
 
     @Override
     public String userLogin(String username, String password) {
-        simulateProcessing(50);
-        return "[RANDOM] " + username + " 登录成功 (权重=100)";
+        simulateProcessing(55);
+        int hash = Math.abs(username.hashCode() % 100);
+        return "[CONSISTENTHASH] " + username + " 登录成功 (hash=" + hash + ", 权重=90)";
     }
 
     private void simulateProcessing(int ms) {

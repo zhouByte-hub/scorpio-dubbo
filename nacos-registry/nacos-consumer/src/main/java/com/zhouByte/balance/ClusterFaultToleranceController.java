@@ -1,4 +1,4 @@
-package com.zhouByte.balance.consumer.controller;
+package com.zhouByte.balance;
 
 import com.zhouByte.api.UserService;
 import org.apache.dubbo.config.annotation.DubboReference;
@@ -17,21 +17,21 @@ public class ClusterFaultToleranceController {
             retries = 3,
             timeout = 2000
     )
-    private userService failoverService;
+    private UserService failoverService;
 
     @DubboReference(
             interfaceClass = UserService.class,
             cluster = "failfast",
             timeout = 2000
     )
-    private userService failfastService;
+    private UserService failfastService;
 
     @DubboReference(
             interfaceClass = UserService.class,
             cluster = "failsafe",
             timeout = 2000
     )
-    private userService failsafeService;
+    private UserService failsafeService;
 
     @GetMapping("/failover/{username}/{password}")
     public String testFailover(@PathVariable String username, @PathVariable String password) {

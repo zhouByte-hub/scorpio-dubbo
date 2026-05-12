@@ -1,6 +1,5 @@
-package com.zhouByte.advanced.consumer.controller;
+package com.zhouByte.advanced;
 
-import com.zhouByte.advanced.AsyncUserService;
 import com.zhouByte.api.UserService;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.apache.dubbo.config.ReferenceConfig;

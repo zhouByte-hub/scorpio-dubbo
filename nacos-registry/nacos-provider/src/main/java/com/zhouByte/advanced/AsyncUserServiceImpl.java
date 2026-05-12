@@ -1,6 +1,5 @@
-package com.zhouByte.advanced.provider.service;
+package com.zhouByte.advanced;
 
-import com.zhouByte.advanced.AsyncUserService;
 import org.apache.dubbo.config.annotation.DubboService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

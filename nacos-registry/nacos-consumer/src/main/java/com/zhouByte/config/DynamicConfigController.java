@@ -1,4 +1,4 @@
-package com.zhouByte.config.consumer.controller;
+package com.zhouByte.config;
 
 import com.zhouByte.api.UserService;
 import org.apache.dubbo.config.annotation.DubboReference;
@@ -30,7 +30,7 @@ public class DynamicConfigController {
                     "retries", "3"
             }
     )
-    private userService dynamicConfigUserService;
+    private UserService dynamicConfigUserService;
 
     @GetMapping("/current/{username}/{password}")
     public String testCurrentConfig(@PathVariable String username, @PathVariable String password) {

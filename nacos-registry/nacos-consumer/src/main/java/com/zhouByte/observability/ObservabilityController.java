@@ -1,7 +1,6 @@
-package com.zhouByte.observability.consumer.controller;
+package com.zhouByte.observability;
 
 import com.zhouByte.api.UserService;
-import com.zhouByte.observability.provider.filter.MetricsFilter;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.apache.dubbo.rpc.RpcContext;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,7 +17,7 @@ public class ObservabilityController {
             group = "observability",
             version = "1.0.0"
     )
-    private userService monitoredUserService;
+    private UserService monitoredUserService;
 
     @GetMapping("/call/{username}/{password}")
     public String testObservability(@PathVariable String username, @PathVariable String password) {

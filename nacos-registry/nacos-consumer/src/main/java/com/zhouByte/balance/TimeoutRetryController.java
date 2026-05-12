@@ -1,4 +1,4 @@
-package com.zhouByte.balance.consumer.controller;
+package com.zhouByte.balance;
 
 import com.zhouByte.api.UserService;
 import org.apache.dubbo.config.annotation.DubboReference;
@@ -16,14 +16,14 @@ public class TimeoutRetryController {
             timeout = 3000,
             retries = 2
     )
-    private userService normalTimeoutService;
+    private UserService normalTimeoutService;
 
     @DubboReference(
             interfaceClass = UserService.class,
             timeout = 1000,
             retries = 0
     )
-    private userService shortTimeoutNoRetryService;
+    private UserService shortTimeoutNoRetryService;
 
     @GetMapping("/normal/{username}/{password}")
     public String testNormalTimeout(@PathVariable String username, @PathVariable String password) {

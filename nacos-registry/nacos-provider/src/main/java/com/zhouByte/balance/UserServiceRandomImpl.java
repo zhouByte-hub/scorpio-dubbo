@@ -1,19 +1,19 @@
-package com.zhouByte.balance.provider.service;
+package com.zhouByte.balance;
 
 import com.zhouByte.api.UserService;
 import org.apache.dubbo.config.annotation.DubboService;
 
 @DubboService(
         interfaceClass = UserService.class,
-        group = "balance-roundrobin",
-        weight = 80
+        group = "balance-random",
+        weight = 100
 )
-public class UserServiceRoundRobinImpl implements UserService {
+public class UserServiceRandomImpl implements UserService {
 
     @Override
     public String userLogin(String username, String password) {
-        simulateProcessing(60);
-        return "[ROUNDROBIN] " + username + " 登录成功 (权重=80)";
+        simulateProcessing(50);
+        return "[RANDOM] " + username + " 登录成功 (权重=100)";
     }
 
     private void simulateProcessing(int ms) {

@@ -1,4 +1,4 @@
-package com.zhouByte.balance.provider.service;
+package com.zhouByte.balance;
 
 import com.zhouByte.api.UserService;
 import org.apache.dubbo.config.annotation.DubboService;

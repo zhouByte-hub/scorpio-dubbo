@@ -1,4 +1,4 @@
-package com.zhouByte.balance.consumer.controller;
+package com.zhouByte.balance;
 
 import com.zhouByte.api.UserService;
 import org.apache.dubbo.config.annotation.DubboReference;
@@ -20,7 +20,7 @@ public class LoadBalanceController {
             loadbalance = "random",
             cluster = "failover"
     )
-    private userService randomUserService;
+    private UserService randomUserService;
 
     @DubboReference(
             interfaceClass = UserService.class,
@@ -28,7 +28,7 @@ public class LoadBalanceController {
             loadbalance = "roundrobin",
             cluster = "failover"
     )
-    private userService roundrobinUserService;
+    private UserService roundrobinUserService;
 
     @DubboReference(
             interfaceClass = UserService.class,
@@ -36,7 +36,7 @@ public class LoadBalanceController {
             loadbalance = "leastactive",
             cluster = "failover"
     )
-    private userService leastActiveUserService;
+    private UserService leastActiveUserService;
 
     @DubboReference(
             interfaceClass = UserService.class,
@@ -44,7 +44,7 @@ public class LoadBalanceController {
             loadbalance = "consistenthash",
             cluster = "failover"
     )
-    private userService consistentHashUserService;
+    private UserService consistentHashUserService;
 
     @GetMapping("/random/{username}/{password}")
     public String testRandomBalance(@PathVariable String username, @PathVariable String password) {

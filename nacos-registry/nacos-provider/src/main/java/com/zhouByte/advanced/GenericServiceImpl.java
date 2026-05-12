@@ -1,7 +1,6 @@
-package com.zhouByte.advanced.provider.service;
+package com.zhouByte.advanced;
 
 import com.zhouByte.api.UserService;
-import com.zhouByte.api.OrderService;
 import org.apache.dubbo.config.annotation.DubboService;
 import org.apache.dubbo.rpc.service.GenericException;
 import org.apache.dubbo.rpc.service.GenericService;

@@ -1,4 +1,4 @@
-package com.zhouByte.observability.provider.filter;
+package com.zhouByte.observability;
 
 import org.apache.dubbo.common.constants.CommonConstants;
 import org.apache.dubbo.common.extension.Activate;

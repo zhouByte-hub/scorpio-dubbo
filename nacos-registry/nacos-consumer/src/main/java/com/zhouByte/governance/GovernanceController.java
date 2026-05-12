@@ -1,4 +1,4 @@
-package com.zhouByte.governance.consumer.controller;
+package com.zhouByte.governance;
 
 import com.zhouByte.api.UserService;
 import org.apache.dubbo.config.annotation.DubboReference;
@@ -16,21 +16,21 @@ public class GovernanceController {
             version = "1.0.0",
             group = "governance-version"
     )
-    private userService v1UserService;
+    private UserService v1UserService;
 
     @DubboReference(
             interfaceClass = UserService.class,
             version = "2.0.0",
             group = "governance-version"
     )
-    private userService v2UserService;
+    private UserService v2UserService;
 
     @DubboReference(
             interfaceClass = UserService.class,
             version = "*",
             group = "governance-version"
     )
-    private userService anyVersionUserService;
+    private UserService anyVersionUserService;
 
     @GetMapping("/version/v1/{username}/{password}")
     public String testVersionV1(@PathVariable String username, @PathVariable String password) {
