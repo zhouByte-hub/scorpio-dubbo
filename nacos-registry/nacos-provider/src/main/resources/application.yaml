@@ -20,5 +20,5 @@ dubbo:
     port: 20880
     name: dubbo
   scan:
-    base-packages: com.zhouByte.service
+    base-packages: com.zhouByte
 

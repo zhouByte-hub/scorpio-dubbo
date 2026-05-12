@@ -1,19 +1,4 @@
-# 🦂 Scorpio Dubbo
 
-<table><tr><td align="center">
-
-**基于 Apache Dubbo 的微服务架构实战项目**
-
-<img src="https://img.shields.io/badge/Java-17-orange" alt="Java Version"/>
-<img src="https://img.shields.io/badge/Spring%20Boot-2.x/3.x-green" alt="Spring Boot"/>
-<img src="https://img.shields.io/badge/Apache%20Dubbo-3.x-blue" alt="Dubbo Version"/>
-<img src="https://img.shields.io/badge/Nacos-2.x-red" alt="Nacos"/>
-<img src="https://img.shields.io/badge/Zookeeper-3.x-yellowgreen" alt="Zookeeper"/>
-<img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License"/>
-
-</td></tr></table>
-
----
 
 ## 📖 项目简介
 
