@@ -2,7 +2,9 @@
 
 <div align="center">
 
-**基于 Apache Dubbo 的微服务架构实战项目**
+<strong>基于 Apache Dubbo 的微服务架构实战项目</strong>
+
+<br/>
 
 <img src="https://img.shields.io/badge/Java-17-orange" alt="Java Version"/>
 <img src="https://img.shields.io/badge/Spring%20Boot-2.x/3.x-green" alt="Spring Boot"/>
