@@ -1,0 +1,24 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: nacos-provider
+  cloud:
+    nacos:
+      config:
+        server-addr: 127.0.0.1:8848
+        namespace: 2cb71f92-6787-40bd-b9df-ccc2be92e0ec
+        file-extension: yaml
+      discovery:
+        server-addr: 127.0.0.1:8848
+        namespace: 2cb71f92-6787-40bd-b9df-ccc2be92e0ec
+dubbo:
+  registry:
+    address: nacos://${spring.cloud.nacos.config.server-addr}
+  protocol:
+    port: 20880
+    name: dubbo
+  scan:
+    base-packages: com.zhouByte.service
+

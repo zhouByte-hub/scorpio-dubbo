@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: scorpio-zk-provider
+
+dubbo:
+  protocol:
+    name: dubbo
+    port: -1
+  registry:
+    address: zookeeper://127.0.0.1:2181
+  application:
+    qos-port: 2222
+  provider:
+    timeout: 5000
+  scan:
+    base-packages: com.zhouByte.service
