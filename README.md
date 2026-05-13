@@ -155,22 +155,84 @@ scorpio-dubbo/
     │
     ├── 📂 interface-api/                #    接口定义层
     │   ├── pom.xml
-    │   └── src/main/java/com/zhouByte/api/
-    │       └── UserService.java         #       用户服务接口
+    │   └── src/main/java/com/zhouByte/
+    │       ├── api/                     #       基础服务接口
+    │       │   └── UserService.java     #          用户服务
+    │       ├── entity/User.java         #       用户实体类
+    │       ├── advanced/                #       高级功能接口
+    │       │   └── AsyncUserService.java #         异步服务
+    │       ├── fallback/                #       服务降级
+    │       │   ├── OrderService.java    #          订单服务接口
+    │       │   └── OrderServiceMock.java #         Mock降级类
+    │       ├── validation/              #       参数验证
+    │       │   ├── UserRegisterService.java #      注册服务
+    │       │   └── UserProfile.java     #          用户DTO
+    │       ├── cache/                   #       结果缓存
+    │       │   └── ProductQueryService.java #      商品查询
+    │       └── observability/           #       可观测性
+    │           └── MetricsQueryService.java #      指标查询
     │
     ├── 📂 provider/                     #    服务提供者
     │   ├── pom.xml
     │   └── src/main/java/com/zhouByte/
     │       ├── ProviderApplication.java  # 启动类
-    │       └── service/UserServiceImpl.java  # 服务实现
+    │       ├── service/                 #       基础服务
+    │       │   └── UserServiceImpl.java #          用户服务实现
+    │       ├── governance/              #       服务治理
+    │       │   ├── UserServiceV1.java   #          V1.0.0 基础版本
+    │       │   ├── UserServiceV2.java   #          V2.0.0 升级版本
+    │       │   └── UserServiceV3Canary.java #     V3.0.0 灰度版本
+    │       ├── balance/                 #       负载均衡
+    │       │   ├── UserServiceRandomImpl.java      # 随机策略
+    │       │   ├── UserServiceRoundRobinImpl.java  # 轮询策略
+    │       │   ├── UserServiceLeastActiveImpl.java # 最少活跃
+    │       │   └── UserServiceConsistentHashImpl.java # 一致性哈希
+    │       ├── advanced/                #       高级调用
+    │       │   ├── AsyncUserServiceImpl.java  #     异步服务实现
+    │       │   └── GenericServiceImpl.java    #     泛化服务实现
+    │       ├── fallback/                #       服务降级
+    │       │   └── OrderServiceImpl.java    #      订单服务实现
+    │       ├── validation/              #       参数验证
+    │       │   └── UserRegisterServiceImpl.java # 注册服务实现
+    │       ├── cache/                   #       结果缓存
+    │       │   └── ProductQueryServiceImpl.java # 商品查询实现
+    │       ├── config/                  #       动态配置
+    │       │   └── ConfigurableUserService.java # 可配置服务
+    │       └── observability/           #       可观测性
+    │           ├── MonitoredUserService.java  #   监控服务
+    │           ├── MetricsQueryServiceImpl.java # 指标查询
+    │           ├── TracingFilter.java   #          链路追踪过滤器
+    │           ├── MetricsFilter.java   #          指标收集过滤器
+    │           └── LoggingFilter.java   #          日志记录过滤器
     │   └── src/main/resources/
-    │       └── application.yaml        # 应用配置
+    │       ├── application.yaml         #       应用配置
+    │       └── META-INF/dubbo/          #       SPI配置
+    │           └── org.apache.dubbo.rpc.Filter # 过滤器注册
     │
     └── 📂 consumer/                     #    服务消费者
         ├── pom.xml
         └── src/main/java/com/zhouByte/
             ├── ConsumerApplication.java  # 启动类
-            └── controller/UserController.java  # REST 控制器
+            ├── controller/              #       基础控制器
+            │   └── UserController.java  #          用户控制器
+            ├── governance/              #       服务治理
+            │   └── GovernanceController.java  #   治理测试
+            ├── balance/                 #       负载均衡
+            │   ├── LoadBalanceController.java   # 负载均衡测试
+            │   ├── ClusterFaultToleranceController.java # 容错测试
+            │   └── TimeoutRetryController.java  # 超时重试测试
+            ├── advanced/                #       高级调用
+            │   └── AdvancedCallController.java  # 异步/泛化调用
+            ├── fallback/                #       服务降级
+            │   └── FallbackController.java    # 降级测试
+            ├── validation/              #       参数验证
+            │   └── ValidationController.java  # 验证测试
+            ├── cache/                   #       结果缓存
+            │   └── CacheController.java     #    缓存测试
+            ├── config/                  #       动态配置
+            │   └── DynamicConfigController.java # 配置测试
+            └── observability/           #       可观测性
+                └── ObservabilityController.java # 观测性测试
         └── src/main/resources/
             └── application.yaml        # 应用配置
 ```
@@ -320,12 +382,58 @@ cd zookeeper-registry/consumer
 
 #### 4️⃣ 测试接口
 
+**基础接口**:
 ```bash
 # 调用用户登录接口
 curl http://localhost:8081/user_login/admin/123456
 
 # 预期返回:
 # admin登录成功
+```
+
+**服务降级**:
+```bash
+# 正常调用
+curl http://localhost:8081/fallback/normal/user001/P001/2
+
+# 强制降级
+curl http://localhost:8081/fallback/force/user001/P001/2
+```
+
+**参数验证**:
+```bash
+# 验证通过
+curl http://localhost:8081/validation/register/valid
+
+# 验证失败
+curl http://localhost:8081/validation/register/invalid-username
+```
+
+**结果缓存**:
+```bash
+# 缓存命中测试
+curl http://localhost:8081/cache/hit/P001
+
+# 无缓存对比
+curl http://localhost:8081/cache/no-cache/P001
+```
+
+**负载均衡**:
+```bash
+# 随机策略
+curl http://localhost:8081/balance/random/admin/123456
+
+# 轮询策略
+curl http://localhost:8081/balance/roundrobin/admin/123456
+```
+
+**服务治理**:
+```bash
+# V1 版本
+curl http://localhost:8081/governance/v1/admin/123456
+
+# V2 版本
+curl http://localhost:8081/governance/v2/admin/123456
 ```
 
 ---
@@ -1053,6 +1161,7 @@ git push origin feature/amazing-feature
 |------|------|------|------|
 | **0.0.1-SNAPSHOT** | 2025-05-12 | 初始版本，支持 Nacos 和 Zookeeper 双注册中心 | zhouByte |
 | **0.0.2-SNAPSHOT** | 2026-05-13 | 新增服务降级、参数验证、结果缓存、异步调用、泛化调用、可观测性、服务治理、动态配置等功能，完善所有代码注释 | zhouByte |
+| **0.0.3-SNAPSHOT** | 2026-05-14 | zookeeper-registry 模块同步 nacos-registry 全部功能，更新项目结构文档 | zhouByte |
 
 ---
 
