@@ -12,6 +12,20 @@ import java.util.UUID;
  * 分布式链路追踪过滤器
  * 生成/传递 traceId 和 spanId，实现跨服务的请求链路追踪
  * 仅在 Provider 端生效
+ * 
+ * Dubbo Filter 扩展机制说明:
+ * @Activate 注解:
+ *   - group = {CommonConstants.PROVIDER}: 仅在 Provider 端激活
+ *   - order = -11000: 执行顺序，比 MetricsFilter(-10000) 更早执行
+ * 
+ * 链路追踪核心概念:
+ *   - traceId: 全局唯一的请求追踪ID，贯穿整个请求链路
+ *   - spanId: 当前节点的标识，用于区分链路中的不同服务节点
+ *   - parentSpanId: 父节点标识，用于构建调用链树
+ * 
+ * RpcContext 传递机制:
+ *   - invocation.getAttachment(key): 从上游获取传递的附件信息
+ *   - RpcContext.getServerContext().setAttachment(key, value): 设置附件传递给下游
  */
 @Activate(group = {CommonConstants.PROVIDER}, order = -11000)
 public class TracingFilter implements Filter {

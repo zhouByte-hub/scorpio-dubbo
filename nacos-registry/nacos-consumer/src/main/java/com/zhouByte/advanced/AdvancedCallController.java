@@ -3,7 +3,7 @@ package com.zhouByte.advanced;
 import com.zhouByte.api.UserService;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.apache.dubbo.config.ReferenceConfig;
-import org.apache.dubbo.config.utils.ReferenceConfigCache;
+import org.apache.dubbo.config.RegistryConfig;
 import org.apache.dubbo.rpc.service.GenericService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -17,11 +17,40 @@ import java.util.concurrent.ExecutionException;
 /**
  * 高级调用测试
  * 演示异步调用(CompletableFuture)和泛化调用(GenericService)
+ * 
+ * Dubbo 高级调用说明:
+ * 
+ * 1. 异步调用(@DubboReference + CompletableFuture):
+ *    - Provider 返回 CompletableFuture<T> 类型
+ *    - Consumer 通过 @DubboReference 引用异步服务
+ *    - 可使用 .get() 阻塞等待或 .thenApply() 链式处理
+ * 
+ * 2. 泛化调用(ReferenceConfig + GenericService):
+ *    - 无需依赖接口 JAR，通过接口全限定名动态调用
+ *    - ReferenceConfig: 手动创建服务引用配置
+ *      - setInterface(): 设置接口全限定名
+ *      - setVersion(): 设置服务版本
+ *      - setGroup(): 设置服务分组
+ *      - setGeneric("true"): 开启泛化调用模式
+ *      - setRegistry(): 设置注册中心地址
+ *      - get(): 获取服务代理对象
+ *      - destroy(): 释放资源
+ *    - GenericService.$invoke(): 执行泛化调用
+ *      - method: 方法名
+ *      - parameterTypes: 参数类型全限定名数组
+ *      - args: 实际参数值数组
  */
 @RestController
 @RequestMapping("/advanced")
 public class AdvancedCallController {
 
+    /**
+     * 引用异步 UserService 服务
+     * @DubboReference 配置:
+     *   - interfaceClass = AsyncUserService.class: 指定异步服务接口
+     *   - group = "advanced": 匹配 Provider 的分组
+     *   - version = "1.0.0": 匹配 Provider 的版本号
+     */
     @DubboReference(
             interfaceClass = AsyncUserService.class,
             group = "advanced",
@@ -29,6 +58,9 @@ public class AdvancedCallController {
     )
     private AsyncUserService asyncUserService;
 
+    /**
+     * 引用同步 UserService 服务(用于对比异步性能)
+     */
     @DubboReference(
             interfaceClass = AsyncUserService.class,
             group = "advanced",
@@ -120,6 +152,12 @@ public class AdvancedCallController {
                              asyncCost, asyncResult.replace("\n", " | "));
     }
 
+    /**
+     * 泛化调用测试 - 无需依赖接口 JAR 即可调用远程服务
+     * ReferenceConfig 说明:
+     *   - 手动创建服务引用，适用于动态调用场景
+     *   - 泛化调用模式下，返回值为 Map 类型(复杂对象会被转换)
+     */
     @SuppressWarnings("unchecked")
     @GetMapping("/generic/{username}/{password}")
     public String testGenericCall(@PathVariable String username, @PathVariable String password) {
@@ -128,9 +166,9 @@ public class AdvancedCallController {
         referenceConfig.setVersion("1.0.0");
         referenceConfig.setGroup("generic");
         referenceConfig.setGeneric("true");
+        referenceConfig.setRegistry(new RegistryConfig("nacos://127.0.0.1:8848"));
 
-        ReferenceConfigCache cache = ReferenceConfigCache.getCache();
-        GenericService genericService = cache.get(referenceConfig);
+        GenericService genericService = referenceConfig.get();
 
         try {
             Object result = genericService.$invoke(
@@ -156,7 +194,7 @@ public class AdvancedCallController {
                     """ + formatMap(resultMap);
 
         } finally {
-            cache.destroy(referenceConfig);
+            referenceConfig.destroy();
         }
     }
 

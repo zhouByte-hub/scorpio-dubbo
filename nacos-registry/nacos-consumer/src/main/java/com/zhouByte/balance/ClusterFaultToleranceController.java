@@ -10,12 +10,40 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * 集群容错模式测试
  * 演示 Failover / Failfast / Failsafe 三种容错策略
+ * 
+ * Dubbo 集群容错模式说明:
+ * @DubboReference 配置:
+ *   - cluster: 指定集群容错策略
+ *     1. failover(失败自动切换): 
+ *        - 失败后自动切换到其他 Provider 重试
+ *        - 配合 retries 参数控制重试次数
+ *        - 适用于读操作(幂等)
+ *     2. failfast(快速失败): 
+ *        - 只调用一次，失败立即抛出异常
+ *        - 适用于写操作(非幂等)
+ *     3. failsafe(失败安全): 
+ *        - 失败时忽略异常，返回 null 或空结果
+ *        - 适用于非核心流程(如日志记录)
+ *     4. failback(失败自动恢复): 
+ *        - 失败后后台定时重试
+ *        - 适用于消息通知等场景
+ *     5. forking(并行调用): 
+ *        - 并行调用多个 Provider，任一成功即返回
+ *        - 适用于实时性要求高的读操作
+ *   - timeout: 单次调用超时时间
+ *   - retries: failover 模式下的重试次数
  */
 @RestController
 @RequestMapping("/cluster")
 public class ClusterFaultToleranceController {
 
-    /** Failover: 失败自动切换，重试3次，适合读操作 */
+    /**
+     * Failover 容错模式: 失败自动切换，重试3次
+     * @DubboReference 配置:
+     *   - cluster = "failover": 失败自动切换
+     *   - retries = 3: 最多重试 3 次
+     *   - timeout = 2000: 单次超时 2 秒
+     */
     @DubboReference(
             interfaceClass = UserService.class,
             cluster = "failover",
@@ -24,7 +52,12 @@ public class ClusterFaultToleranceController {
     )
     private UserService failoverService;
 
-    /** Failfast: 只调用1次，失败立即报错，适合写操作 */
+    /**
+     * Failfast 容错模式: 快速失败，只调用一次
+     * @DubboReference 配置:
+     *   - cluster = "failfast": 快速失败
+     *   - timeout = 2000: 单次超时 2 秒
+     */
     @DubboReference(
             interfaceClass = UserService.class,
             cluster = "failfast",
@@ -32,7 +65,12 @@ public class ClusterFaultToleranceController {
     )
     private UserService failfastService;
 
-    /** Failsafe: 失败时忽略异常，返回null，适合非核心流程 */
+    /**
+     * Failsafe 容错模式: 失败安全，异常被忽略
+     * @DubboReference 配置:
+     *   - cluster = "failsafe": 失败安全
+     *   - timeout = 2000: 单次超时 2 秒
+     */
     @DubboReference(
             interfaceClass = UserService.class,
             cluster = "failsafe",

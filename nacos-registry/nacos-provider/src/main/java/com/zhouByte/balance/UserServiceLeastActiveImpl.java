@@ -9,6 +9,12 @@ import java.util.concurrent.atomic.AtomicInteger;
  * 最少活跃数负载均衡策略实现
  * 优先选择当前并发请求数最少的 Provider，适用于 Provider 性能不均的场景
  * 活跃数相同时按权重二次选择
+ * 
+ * Dubbo 负载均衡配置:
+ * @DubboService 配置:
+ *   - interfaceClass = UserService.class: 指定服务接口类型
+ *   - group = "balance-leastactive": 服务分组，标识此实例使用最少活跃策略
+ *   - weight = 60: 服务权重值，活跃数相同时按权重分配
  */
 @DubboService(
         interfaceClass = UserService.class,

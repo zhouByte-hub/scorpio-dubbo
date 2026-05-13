@@ -10,11 +10,32 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * 服务治理能力测试
  * 演示版本路由、标签路由、条件路由、分组路由
+ * 
+ * Dubbo 服务治理说明:
+ * @DubboReference 配置:
+ *   - version: 服务版本号
+ *     - 精确匹配: version="1.0.0" 只调用 V1.0.0 版本
+ *     - 通配符匹配: version="*" 可调用任意版本(由注册中心决定)
+ *   - group: 服务分组
+ *     - 用于服务逻辑隔离，如多租户、业务模块划分
+ *     - Consumer 和 Provider 的 group 必须匹配才能调用
+ * 
+ * 路由规则:
+ *   1. 版本路由: 根据 version 匹配不同版本的服务
+ *   2. 标签路由: 根据 tag 参数路由到特定实例(如 canary)
+ *   3. 条件路由: 根据 Consumer/Provider 属性进行路由
+ *   4. 分组路由: 根据 group 进行服务隔离
  */
 @RestController
 @RequestMapping("/governance")
 public class GovernanceController {
 
+    /**
+     * 引用 V1.0.0 版本服务
+     * @DubboReference 配置:
+     *   - version = "1.0.0": 精确匹配 V1 版本
+     *   - group = "governance-version": 匹配治理分组
+     */
     @DubboReference(
             interfaceClass = UserService.class,
             version = "1.0.0",
@@ -22,6 +43,9 @@ public class GovernanceController {
     )
     private UserService v1UserService;
 
+    /**
+     * 引用 V2.0.0 版本服务
+     */
     @DubboReference(
             interfaceClass = UserService.class,
             version = "2.0.0",
@@ -29,6 +53,11 @@ public class GovernanceController {
     )
     private UserService v2UserService;
 
+    /**
+     * 引用任意版本服务(通配符)
+     * @DubboReference 配置:
+     *   - version = "*": 通配符，匹配任意版本
+     */
     @DubboReference(
             interfaceClass = UserService.class,
             version = "*",

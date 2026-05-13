@@ -14,12 +14,16 @@
 		<module>nacos-registry</module>
 	</modules>
 
+	<properties>
+		<spring.version>2.7.17</spring.version>
+	</properties>
 
 	<build>
 		<plugins>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+				<version>${spring.version}</version>
 			</plugin>
 		</plugins>
 	</build>

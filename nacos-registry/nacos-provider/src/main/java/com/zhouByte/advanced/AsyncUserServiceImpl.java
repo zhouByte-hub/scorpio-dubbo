@@ -10,6 +10,17 @@ import java.util.concurrent.Executors;
 
 /**
  * 异步用户服务实现 - 使用独立线程池避免阻塞 Dubbo IO 线程
+ * 
+ * Dubbo 异步调用说明:
+ * @DubboService 配置:
+ *   - interfaceClass = AsyncUserService.class: 显式指定暴露的接口类型
+ *   - group = "advanced": 服务分组为 advanced，用于服务隔离
+ *   - version = "1.0.0": 服务版本号，Consumer 需匹配相同版本才能调用
+ * 
+ * CompletableFuture 异步返回:
+ *   - Dubbo 支持返回 CompletableFuture<T> 类型
+ *   - Provider 端异步处理，不阻塞 Dubbo 线程池
+ *   - Consumer 端可通过 .get() 阻塞等待或 .thenApply() 链式处理
  */
 @DubboService(
         interfaceClass = AsyncUserService.class,
