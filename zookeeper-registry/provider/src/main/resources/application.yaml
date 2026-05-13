@@ -13,4 +13,4 @@ dubbo:
   provider:
     timeout: 5000
   scan:
-    base-packages: com.zhouByte.service
+    base-packages: com.zhouByte
