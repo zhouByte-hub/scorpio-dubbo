@@ -1,0 +1,3 @@
+metricsFilter=com.zhouByte.observability.MetricsFilter
+tracingFilter=com.zhouByte.observability.TracingFilter
+loggingFilter=com.zhouByte.observability.LoggingFilter

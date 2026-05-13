@@ -3,6 +3,9 @@ package com.zhouByte.service;
 import com.zhouByte.api.UserService;
 import org.apache.dubbo.config.annotation.DubboService;
 
+/**
+ * 用户服务基础实现
+ */
 @DubboService
 public class UserServiceImpl implements UserService {
 

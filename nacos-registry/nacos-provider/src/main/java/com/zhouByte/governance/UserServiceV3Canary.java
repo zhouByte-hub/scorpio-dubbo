@@ -3,6 +3,10 @@ package com.zhouByte.governance;
 import com.zhouByte.api.UserService;
 import org.apache.dubbo.config.annotation.DubboService;
 
+/**
+ * 用户服务 V3.0.0 - 金丝雀版本（Canary）
+ * 带 tag=canary 标签，用于金丝雀发布和灰度测试
+ */
 @DubboService(
         interfaceClass = UserService.class,
         version = "3.0.0",
