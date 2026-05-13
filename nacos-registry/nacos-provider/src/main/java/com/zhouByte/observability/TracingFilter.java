@@ -21,8 +21,8 @@ public class TracingFilter implements Filter {
     @Override
     public Result invoke(Invoker<?> invoker, Invocation invocation) {
         // 从上游获取 traceId，若无则生成新的
-        String traceId = RpcContext.getServerAttachment().get("traceId");
-        String parentSpanId = RpcContext.getServerAttachment().get("spanId");
+        String traceId = invocation.getAttachment("traceId");
+        String parentSpanId = invocation.getAttachment("spanId");
 
         if (traceId == null || traceId.isEmpty()) {
             traceId = generateTraceId();

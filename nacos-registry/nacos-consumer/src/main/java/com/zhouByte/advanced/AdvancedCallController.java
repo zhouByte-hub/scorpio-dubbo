@@ -80,8 +80,9 @@ public class AdvancedCallController {
             });
         });
 
-        CompletableFuture<String> finalResult = step2.thenAccept(finalData -> {
+        CompletableFuture<String> finalResult = step2.thenApply(finalData -> {
             logBuilder.append("Step 3: 最终结果 → ").append(finalData).append("\n");
+            return finalData;
         });
 
         finalResult.get();

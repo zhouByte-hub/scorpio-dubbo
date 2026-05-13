@@ -34,10 +34,10 @@ public class ObservabilityController {
     public String testObservability(@PathVariable String username, @PathVariable String password) {
         String traceId = java.util.UUID.randomUUID().toString().replace("-", "").substring(0, 16);
 
-        RpcContext.getClientAttachment().setAttachment("traceId", traceId);
-        RpcContext.getClientAttachment().setAttachment("spanId", "0");
-        RpcContext.getClientAttachment().setAttachment("userId", username);
-        RpcContext.getClientAttachment().setAttachment("requestType", "HTTP_API");
+        RpcContext.getContext().setAttachment("traceId", traceId);
+        RpcContext.getContext().setAttachment("spanId", "0");
+        RpcContext.getContext().setAttachment("userId", username);
+        RpcContext.getContext().setAttachment("requestType", "HTTP_API");
 
         return """
                 [可观测性演示]

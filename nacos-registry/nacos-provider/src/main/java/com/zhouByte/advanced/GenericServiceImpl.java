@@ -16,10 +16,8 @@ import java.util.Map;
         interfaceClass = GenericService.class,
         group = "generic",
         version = "1.0.0",
-        generic = "true",
         parameters = {
-                "interface", "com.zhouByte.api.UserService",
-                "generic", "true"
+                "interface", "com.zhouByte.api.UserService"
         }
 )
 public class GenericServiceImpl implements GenericService {
