@@ -23,6 +23,7 @@
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <spring.version>2.7.17</spring.version>
+        <dubbo.version>3.0.8</dubbo.version>
     </properties>
 
     <dependencyManagement>
@@ -30,7 +31,7 @@
             <dependency>
                 <groupId>org.apache.dubbo</groupId>
                 <artifactId>dubbo-spring-boot-starter</artifactId>
-                <version>${spring.version}</version>
+                <version>${dubbo.version}</version>
             </dependency>
 
             <dependency>
@@ -54,7 +55,7 @@
             <dependency>
                 <groupId>org.apache.dubbo</groupId>
                 <artifactId>dubbo-registry-nacos</artifactId>
-                <version>${spring.version}</version>
+                <version>${dubbo.version}</version>
             </dependency>
 
 
