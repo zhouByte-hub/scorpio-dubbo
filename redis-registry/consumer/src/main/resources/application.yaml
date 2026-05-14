@@ -1,0 +1,14 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: scorpio-redis-consumer
+
+dubbo:
+  registry:
+    address: redis://127.0.0.1:6379
+  application:
+    qos-port: 2225
+  consumer:
+    timeout: 5000

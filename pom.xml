@@ -12,6 +12,7 @@
 	<modules>
         <module>zookeeper-registry</module>
 		<module>nacos-registry</module>
+		<module>redis-registry</module>
 	</modules>
 
 	<properties>

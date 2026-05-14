@@ -2,11 +2,11 @@
 
 ## 📖 项目简介
 
-**Scorpio Dubbo** 是一个基于 **Apache Dubbo** 框架的微服务架构实战演示项目，旨在展示如何使用 Dubbo 构建高可用、可扩展的分布式服务系统。项目采用 **Maven 多模块** 结构，提供两种主流注册中心的完整实现方案：**Nacos** 和 **Zookeeper**。
+**Scorpio Dubbo** 是一个基于 **Apache Dubbo** 框架的微服务架构实战演示项目，旨在展示如何使用 Dubbo 构建高可用、可扩展的分布式服务系统。项目采用 **Maven 多模块** 结构，提供三种主流注册中心的完整实现方案：**Nacos**、**Zookeeper** 和 **Redis**。
 
 本项目适合用于：
 - 学习 Apache Dubbo 微服务开发最佳实践
-- 对比不同注册中心（Nacos vs Zookeeper）的使用场景和配置差异
+- 对比不同注册中心（Nacos vs Zookeeper vs Redis）的使用场景和配置差异
 - 理解 RPC 远程调用、服务注册与发现、负载均衡等核心概念
 - 作为企业级微服务项目的参考模板
 
@@ -18,7 +18,7 @@
 - ✅ **标准化的 Maven 父子模块结构** - 三层模块层级（根模块 → 注册中心模块 → 业务子模块）
 - ✅ **统一的依赖管理** - groupId: `com.scorpio`，版本集中管控
 - ✅ **三层业务架构** - Interface API → Provider → Consumer 标准分层模式
-- ✅ **双注册中心支持** - Nacos 和 Zookeeper 可独立运行，互不影响
+- ✅ **三注册中心支持** - Nacos、Zookeeper 和 Redis 可独立运行，互不影响
 
 ### 🔧 技术亮点
 - ✅ **RPC 远程调用** - 基于 Dubbo 协议的高性能服务调用
@@ -46,6 +46,7 @@
 | **Apache Dubbo** | 3.2.12 / 2.7.17 | RPC 服务框架 |
 | **Alibaba Nacos** | 2.x | 注册中心 + 配置中心 |
 | **Apache Zookeeper** | 3.x | 分布式协调服务 |
+| **Redis** | 6.x+ | 内存数据库/注册中心 |
 | **Spring Cloud Alibaba** | 2021.0.5.0 | 云原生工具集 |
 | **Lombok** | 1.18.32 | 代码简化工具 |
 | **Maven** | 3.x | 项目构建管理 |
@@ -247,6 +248,7 @@ scorpio-dubbo/
 - **Maven 3.6+** 或 IDE 内置 Maven
 - **Nacos Server 2.x** (仅 Nacos 方案需要) [下载地址](https://github.com/alibaba/nacos/releases)
 - **Zookeeper 3.x** (仅 ZK 方案需要) [下载地址](https://zookeeper.apache.org/releases.html)
+- **Redis 6.x+** (仅 Redis 方案需要) [下载地址](https://redis.io/download)
 
 ### 方案一：使用 Nacos 注册中心
 
@@ -434,6 +436,100 @@ curl http://localhost:8081/governance/v1/admin/123456
 
 # V2 版本
 curl http://localhost:8081/governance/v2/admin/123456
+```
+
+---
+
+### 方案三：使用 Redis 注册中心
+
+#### 1️⃣ 启动 Redis Server
+
+```bash
+# 使用 Docker 快速启动
+docker run -d --name redis -p 6379:6379 redis:latest
+
+# 或者本地启动
+redis-server
+
+# 验证连接
+redis-cli ping
+# 预期返回: PONG
+```
+
+#### 2️⃣ 启动 Provider（服务提供者）
+
+```bash
+cd redis-registry/provider
+../../mvnw spring-boot:run
+# 或在 IDEA 中运行 RedisProviderApplication.main()
+```
+
+✅ 成功标志：
+- 控制台显示 `Started RedisProviderApplication`
+- Dubbo 服务已注册到 Redis
+
+#### 3️⃣ 启动 Consumer（服务消费者）
+
+```bash
+cd redis-registry/consumer
+../../mvnw spring-boot:run
+# 或在 IDEA 中运行 RedisConsumerApplication.main()
+```
+
+#### 4️⃣ 测试接口
+
+**基础接口**:
+```bash
+# 调用用户登录接口
+curl http://localhost:8083/login/admin/123456
+
+# 预期返回:
+# admin登录成功
+```
+
+**服务降级**:
+```bash
+# 正常调用
+curl http://localhost:8083/fallback/normal/user001/P001/2
+
+# 强制降级
+curl http://localhost:8083/fallback/force/user001/P001/2
+```
+
+**参数验证**:
+```bash
+# 验证通过
+curl http://localhost:8083/validation/register/valid
+
+# 验证失败
+curl http://localhost:8083/validation/register/invalid-username
+```
+
+**结果缓存**:
+```bash
+# 缓存命中测试
+curl http://localhost:8083/cache/hit/P001
+
+# 无缓存对比
+curl http://localhost:8083/cache/no-cache/P001
+```
+
+**负载均衡**:
+```bash
+# 随机策略
+curl http://localhost:8083/balance/random/admin/123456
+
+# 轮询策略
+curl http://localhost:8083/balance/roundrobin/admin/123456
+```
+
+**服务治理**:
+```bash
+# V1 版本
+curl http://localhost:8083/governance/v1/admin/123456
+
+# V2 版本
+curl http://localhost:8083/governance/v2/admin/123456
 ```
 
 ---
@@ -1162,6 +1258,7 @@ git push origin feature/amazing-feature
 | **0.0.1-SNAPSHOT** | 2025-05-12 | 初始版本，支持 Nacos 和 Zookeeper 双注册中心 | zhouByte |
 | **0.0.2-SNAPSHOT** | 2026-05-13 | 新增服务降级、参数验证、结果缓存、异步调用、泛化调用、可观测性、服务治理、动态配置等功能，完善所有代码注释 | zhouByte |
 | **0.0.3-SNAPSHOT** | 2026-05-14 | zookeeper-registry 模块同步 nacos-registry 全部功能，更新项目结构文档 | zhouByte |
+| **0.0.4-SNAPSHOT** | 2026-05-14 | 新增 redis-registry 模块，支持 Redis 作为注册中心，完善三种注册中心对比 | zhouByte |
 
 ---
 
