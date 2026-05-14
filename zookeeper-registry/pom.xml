@@ -13,9 +13,9 @@
     <artifactId>zookeeper-registry</artifactId>
 
     <modules>
-        <module>provider</module>
-        <module>interface-api</module>
-        <module>consumer</module>
+        <module>zookeeper-provider</module>
+        <module>zookeeper-interface-api</module>
+        <module>zookeeper-consumer</module>
     </modules>
 
     <properties>

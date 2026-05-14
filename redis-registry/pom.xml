@@ -13,9 +13,9 @@
     <artifactId>redis-registry</artifactId>
 
     <modules>
-        <module>provider</module>
-        <module>interface-api</module>
-        <module>consumer</module>
+        <module>redis-provider</module>
+        <module>redis-interface-api</module>
+        <module>redis-consumer</module>
     </modules>
 
     <properties>

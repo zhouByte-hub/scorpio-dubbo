@@ -154,7 +154,7 @@ scorpio-dubbo/
 └── 📂 zookeeper-registry/               # 🟢 Zookeeper 注册中心模块
     ├── pom.xml                          #    中间层 POM
     │
-    ├── 📂 interface-api/                #    接口定义层
+    ├── 📂 zookeeper-interface-api/      #    接口定义层
     │   ├── pom.xml
     │   └── src/main/java/com/zhouByte/
     │       ├── api/                     #       基础服务接口
@@ -173,10 +173,10 @@ scorpio-dubbo/
     │       └── observability/           #       可观测性
     │           └── MetricsQueryService.java #      指标查询
     │
-    ├── 📂 provider/                     #    服务提供者
+    ├── 📂 zookeeper-provider/           #    服务提供者
     │   ├── pom.xml
     │   └── src/main/java/com/zhouByte/
-    │       ├── ProviderApplication.java  # 启动类
+    │       ├── ZookeeperProviderApplication.java  # 启动类
     │       ├── service/                 #       基础服务
     │       │   └── UserServiceImpl.java #          用户服务实现
     │       ├── governance/              #       服务治理
@@ -210,10 +210,10 @@ scorpio-dubbo/
     │       └── META-INF/dubbo/          #       SPI配置
     │           └── org.apache.dubbo.rpc.Filter # 过滤器注册
     │
-    └── 📂 consumer/                     #    服务消费者
+    └── 📂 zookeeper-consumer/           #    服务消费者
         ├── pom.xml
         └── src/main/java/com/zhouByte/
-            ├── ConsumerApplication.java  # 启动类
+            ├── ZookeeperConsumerApplication.java  # 启动类
             ├── controller/              #       基础控制器
             │   └── UserController.java  #          用户控制器
             ├── governance/              #       服务治理
@@ -365,9 +365,9 @@ cd /path/to/zookeeper/bin
 #### 2️⃣ 启动 Provider（服务提供者）
 
 ```bash
-cd zookeeper-registry/provider
+cd zookeeper-registry/zookeeper-provider
 ../../mvnw spring-boot:run
-# 或在 IDEA 中运行 ProviderApplication.main()
+# 或在 IDEA 中运行 ZookeeperProviderApplication.main()
 ```
 
 ✅ 成功标志：
@@ -377,9 +377,9 @@ cd zookeeper-registry/provider
 #### 3️⃣ 启动 Consumer（服务消费者）
 
 ```bash
-cd zookeeper-registry/consumer
+cd zookeeper-registry/zookeeper-consumer
 ../../mvnw spring-boot:run
-# 或在 IDEA 中运行 ConsumerApplication.main()
+# 或在 IDEA 中运行 ZookeeperConsumerApplication.main()
 ```
 
 #### 4️⃣ 测试接口
@@ -459,7 +459,7 @@ redis-cli ping
 #### 2️⃣ 启动 Provider（服务提供者）
 
 ```bash
-cd redis-registry/provider
+cd redis-registry/redis-provider
 ../../mvnw spring-boot:run
 # 或在 IDEA 中运行 RedisProviderApplication.main()
 ```
@@ -471,7 +471,7 @@ cd redis-registry/provider
 #### 3️⃣ 启动 Consumer（服务消费者）
 
 ```bash
-cd redis-registry/consumer
+cd redis-registry/redis-consumer
 ../../mvnw spring-boot:run
 # 或在 IDEA 中运行 RedisConsumerApplication.main()
 ```
