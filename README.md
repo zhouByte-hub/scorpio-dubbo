@@ -1,5 +1,4 @@
 
-
 ## 📖 项目简介
 
 **Scorpio Dubbo** 是一个基于 **Apache Dubbo** 框架的微服务架构实战演示项目，旨在展示如何使用 Dubbo 构建高可用、可扩展的分布式服务系统。项目采用 **Maven 多模块** 结构，提供三种主流注册中心的完整实现方案：**Nacos**、**Zookeeper** 和 **Redis**。
@@ -240,307 +239,57 @@ scorpio-dubbo/
 
 ---
 
-## 🚀 快速开始
+## 🎯 Dubbo 核心功能详解
 
-### 前置要求
+### 1. 服务注册与发现
 
-- **JDK 17+** ([下载地址](https://adoptium.net/))
-- **Maven 3.6+** 或 IDE 内置 Maven
-- **Nacos Server 2.x** (仅 Nacos 方案需要) [下载地址](https://github.com/alibaba/nacos/releases)
-- **Zookeeper 3.x** (仅 ZK 方案需要) [下载地址](https://zookeeper.apache.org/releases.html)
-- **Redis 6.x+** (仅 Redis 方案需要) [下载地址](https://redis.io/download)
+Dubbo 通过注册中心实现服务的自动注册与发现，是微服务架构的基础能力。
 
-### 方案一：使用 Nacos 注册中心
+**工作原理**:
+1. **Provider** 启动时向注册中心注册服务元数据（接口名、版本、分组、地址等）
+2. **Consumer** 启动时从注册中心订阅所需服务
+3. 注册中心将服务列表推送给 Consumer
+4. Consumer 基于负载均衡策略选择 Provider 进行调用
+5. Provider 下线时，注册中心通知 Consumer 更新服务列表
 
-#### 1️⃣ 启动 Nacos Server
+**支持的注册中心**:
 
-```bash
-# 单机模式启动 Nacos
-sh startup.sh -m standalone
+| 注册中心 | 特点 | 适用场景 |
+|----------|------|----------|
+| **Nacos** | 功能丰富，支持配置中心，AP/CP 可切换 | 云原生环境 |
+| **Zookeeper** | 稳定可靠，强一致性 (CP) | 传统企业环境 |
+| **Redis** | 轻量级，高性能，AP 模型 | 已有 Redis 基础设施 |
 
-# 访问控制台
-# http://localhost:8848/nacos
-# 默认账号密码: nacos/nacos
-```
+**配置示例**:
+```yaml
+# Nacos 注册中心
+dubbo:
+  registry:
+    address: nacos://127.0.0.1:8848
+    parameters:
+      namespace: 2cb71f92-6787-40bd-b9df-ccc2be92e0ec
 
-#### 2️⃣ 创建 Namespace（可选但推荐）
+# Zookeeper 注册中心
+dubbo:
+  registry:
+    address: zookeeper://127.0.0.1:2181
 
-在 Nacos 控制台创建命名空间：
-- 命名空间 ID: `2cb71f92-6787-40bd-b9df-ccc2be92e0ec`
-- 命称: `scorpio-dev`
-
-#### 3️⃣ 启动 Provider（服务提供者）
-
-```bash
-cd nacos-registry/nacos-provider
-../mvnw spring-boot:run
-# 或者在 IDEA 中直接运行 NacosProviderApplication.main()
-```
-
-✅ 成功标志：
-- 控制台显示 `Started NacosProviderApplication`
-- 在 Nacos 控制台「服务列表」中看到 `nacos-provider` 服务
-
-#### 4️⃣ 启动 Consumer（服务消费者）
-
-```bash
-cd nacos-registry/nacos-consumer
-../mvnw spring-boot:run
-# 或者在 IDEA 中直接运行 NacosConsumerApplication.main()
-```
-
-#### 5️⃣ 测试接口
-
-**基础接口**:
-```bash
-# 调用用户登录接口
-curl http://localhost:8082/login/admin/123456
-
-# 预期返回:
-# admin登录成功
-```
-
-**服务降级**:
-```bash
-# 正常调用
-curl http://localhost:8082/fallback/normal/user001/P001/2
-
-# 强制降级
-curl http://localhost:8082/fallback/force/user001/P001/2
-```
-
-**参数验证**:
-```bash
-# 验证通过
-curl http://localhost:8082/validation/register/valid
-
-# 验证失败
-curl http://localhost:8082/validation/register/invalid-username
-```
-
-**结果缓存**:
-```bash
-# 缓存命中测试
-curl http://localhost:8082/cache/hit/P001
-
-# 无缓存对比
-curl http://localhost:8082/cache/no-cache/P001
-```
-
-**负载均衡**:
-```bash
-# 随机策略
-curl http://localhost:8082/balance/random/admin/123456
-
-# 轮询策略
-curl http://localhost:8082/balance/roundrobin/admin/123456
-```
-
-**服务治理**:
-```bash
-# V1 版本
-curl http://localhost:8082/governance/v1/admin/123456
-
-# V2 版本
-curl http://localhost:8082/governance/v2/admin/123456
+# Redis 注册中心
+dubbo:
+  registry:
+    address: redis://127.0.0.1:6379
 ```
 
 ---
 
-### 方案二：使用 Zookeeper 注册中心
+### 2. 服务降级与 Mock
 
-#### 1️⃣ 启动 Zookeeper Server
+当 Provider 不可用时，自动降级到本地 Mock 类，保证系统可用性，防止雪崩效应。
 
-```bash
-# 进入 Zookeeper 安装目录
-cd /path/to/zookeeper/bin
+**实现原理**:
+Dubbo 在 Consumer 端拦截调用异常，根据配置的降级策略返回 Mock 结果。
 
-# 启动服务
-./zkServer.sh start
-
-# 验证状态
-./zkServer.sh status
-```
-
-#### 2️⃣ 启动 Provider（服务提供者）
-
-```bash
-cd zookeeper-registry/zookeeper-provider
-../../mvnw spring-boot:run
-# 或在 IDEA 中运行 ZookeeperProviderApplication.main()
-```
-
-✅ 成功标志：
-- 控制台显示 `Started ProviderApplication`
-- Dubbo 服务已注册到 Zookeeper
-
-#### 3️⃣ 启动 Consumer（服务消费者）
-
-```bash
-cd zookeeper-registry/zookeeper-consumer
-../../mvnw spring-boot:run
-# 或在 IDEA 中运行 ZookeeperConsumerApplication.main()
-```
-
-#### 4️⃣ 测试接口
-
-**基础接口**:
-```bash
-# 调用用户登录接口
-curl http://localhost:8081/user_login/admin/123456
-
-# 预期返回:
-# admin登录成功
-```
-
-**服务降级**:
-```bash
-# 正常调用
-curl http://localhost:8081/fallback/normal/user001/P001/2
-
-# 强制降级
-curl http://localhost:8081/fallback/force/user001/P001/2
-```
-
-**参数验证**:
-```bash
-# 验证通过
-curl http://localhost:8081/validation/register/valid
-
-# 验证失败
-curl http://localhost:8081/validation/register/invalid-username
-```
-
-**结果缓存**:
-```bash
-# 缓存命中测试
-curl http://localhost:8081/cache/hit/P001
-
-# 无缓存对比
-curl http://localhost:8081/cache/no-cache/P001
-```
-
-**负载均衡**:
-```bash
-# 随机策略
-curl http://localhost:8081/balance/random/admin/123456
-
-# 轮询策略
-curl http://localhost:8081/balance/roundrobin/admin/123456
-```
-
-**服务治理**:
-```bash
-# V1 版本
-curl http://localhost:8081/governance/v1/admin/123456
-
-# V2 版本
-curl http://localhost:8081/governance/v2/admin/123456
-```
-
----
-
-### 方案三：使用 Redis 注册中心
-
-#### 1️⃣ 启动 Redis Server
-
-```bash
-# 使用 Docker 快速启动
-docker run -d --name redis -p 6379:6379 redis:latest
-
-# 或者本地启动
-redis-server
-
-# 验证连接
-redis-cli ping
-# 预期返回: PONG
-```
-
-#### 2️⃣ 启动 Provider（服务提供者）
-
-```bash
-cd redis-registry/redis-provider
-../../mvnw spring-boot:run
-# 或在 IDEA 中运行 RedisProviderApplication.main()
-```
-
-✅ 成功标志：
-- 控制台显示 `Started RedisProviderApplication`
-- Dubbo 服务已注册到 Redis
-
-#### 3️⃣ 启动 Consumer（服务消费者）
-
-```bash
-cd redis-registry/redis-consumer
-../../mvnw spring-boot:run
-# 或在 IDEA 中运行 RedisConsumerApplication.main()
-```
-
-#### 4️⃣ 测试接口
-
-**基础接口**:
-```bash
-# 调用用户登录接口
-curl http://localhost:8083/login/admin/123456
-
-# 预期返回:
-# admin登录成功
-```
-
-**服务降级**:
-```bash
-# 正常调用
-curl http://localhost:8083/fallback/normal/user001/P001/2
-
-# 强制降级
-curl http://localhost:8083/fallback/force/user001/P001/2
-```
-
-**参数验证**:
-```bash
-# 验证通过
-curl http://localhost:8083/validation/register/valid
-
-# 验证失败
-curl http://localhost:8083/validation/register/invalid-username
-```
-
-**结果缓存**:
-```bash
-# 缓存命中测试
-curl http://localhost:8083/cache/hit/P001
-
-# 无缓存对比
-curl http://localhost:8083/cache/no-cache/P001
-```
-
-**负载均衡**:
-```bash
-# 随机策略
-curl http://localhost:8083/balance/random/admin/123456
-
-# 轮询策略
-curl http://localhost:8083/balance/roundrobin/admin/123456
-```
-
-**服务治理**:
-```bash
-# V1 版本
-curl http://localhost:8083/governance/v1/admin/123456
-
-# V2 版本
-curl http://localhost:8083/governance/v2/admin/123456
-```
-
----
-
-## 🎯 功能模块详解
-
-### 1. 服务降级与 Mock
-
-当 Provider 不可用时，自动降级到本地 Mock 类，保证系统可用性。
-
-**Provider 端**:
+**Provider 端配置**:
 ```java
 @DubboService(
     interfaceClass = OrderService.class,
@@ -552,7 +301,7 @@ public class OrderServiceImpl implements OrderService {
 }
 ```
 
-**Mock 类** (命名规则: 接口名 + Mock):
+**Mock 类实现** (命名规则: 接口名 + Mock):
 ```java
 public class OrderServiceMock implements OrderService {
     @Override
@@ -562,7 +311,7 @@ public class OrderServiceMock implements OrderService {
 }
 ```
 
-**Consumer 端**:
+**Consumer 端配置**:
 ```java
 // 失败时自动降级
 @DubboReference(
@@ -578,680 +327,451 @@ private OrderService forceFallbackOrderService;
 ```
 
 **降级策略**:
-| 策略 | 说明 |
-|------|------|
-| `mock = "true"` | 失败时自动降级 |
-| `mock = "force:return null"` | 强制降级，不调用 Provider |
-| `mock = "fail:return null"` | 失败时降级，返回 null |
-| `mock = "com.xxx.MyMock"` | 指定自定义 Mock 类 |
 
-**测试接口**:
-```bash
-# 正常调用
-curl http://localhost:8082/fallback/normal/user001/P001/2
-
-# 强制降级
-curl http://localhost:8082/fallback/force/user001/P001/2
-```
+| 策略 | 说明 | 适用场景 |
+|------|------|----------|
+| `mock = "true"` | 失败时自动降级 | 非核心业务 |
+| `mock = "force:return null"` | 强制降级，不调用 Provider | 功能开关 |
+| `mock = "fail:return null"` | 失败时降级，返回 null | 可选功能 |
+| `mock = "com.xxx.MyMock"` | 指定自定义 Mock 类 | 复杂降级逻辑 |
 
 ---
 
-### 2. 参数验证 (Validation)
+### 3. 参数验证
 
-基于 JSR303/Hibernate Validator 的参数校验，确保数据合法性。
+基于 JSR303/Hibernate Validator 的参数校验，在服务提供者端自动验证参数合法性，减少手动校验代码。
 
-**接口定义** (验证注解标注在接口上):
+**实现原理**:
+Dubbo 在 Provider 端通过 ValidationFilter 拦截调用，自动执行参数验证。
+
+**接口定义**:
 ```java
 public interface UserRegisterService {
-    String registerUser(
-        @NotBlank(message = "用户名不能为空")
-        @Size(min = 3, max = 20, message = "用户名长度必须在 3-20 字符之间")
-        String username,
-
-        @Email(message = "邮箱格式不正确")
-        String email,
-
-        @Min(value = 1, message = "年龄必须大于等于 1")
-        Integer age
+    /**
+     * 用户注册
+     * @param username 用户名(3-20字符)
+     * @param email 邮箱(必须有效)
+     * @param age 年龄(18-100)
+     */
+    String register(
+        @NotBlank(message = "用户名不能为空") String username, 
+        @Email(message = "邮箱格式不正确") String email, 
+        @Min(value = 18, message = "年龄必须大于18岁") 
+        @Max(value = 100, message = "年龄必须小于100岁") int age
     );
 }
 ```
 
-**Provider 端** (启用验证):
+**Provider 端配置**:
 ```java
-@DubboService(
-    interfaceClass = UserRegisterService.class,
-    group = "validation-demo",
-    validation = "jvalidation"  // 启用 JSR303 验证
-)
+@DubboService(validation = "true")
 public class UserRegisterServiceImpl implements UserRegisterService {
-    // 无需额外验证逻辑，Dubbo 自动验证
+    @Override
+    public String register(@NotBlank String username, @Email String email, @Min(18) @Max(100) int age) {
+        // 参数已自动验证，无需手动校验
+        return "注册成功";
+    }
 }
 ```
 
-**Consumer 端**:
+**Consumer 端配置**:
 ```java
-@DubboReference(
-    interfaceClass = UserRegisterService.class,
-    group = "validation-demo",
-    validation = "true"  // 启用 Consumer 端验证
-)
+@DubboReference(validation = "true")
 private UserRegisterService userRegisterService;
 ```
 
 **常用验证注解**:
-| 注解 | 说明 |
-|------|------|
-| `@NotNull` | 不能为 null |
-| `@NotBlank` | 不能为空且长度 > 0 |
-| `@Size(min, max)` | 长度/大小范围 |
-| `@Min/@Max` | 数值范围 |
-| `@Email` | 邮箱格式 |
-| `@Pattern` | 正则表达式 |
 
-**测试接口**:
-```bash
-# 验证通过
-curl http://localhost:8082/validation/register/valid
-
-# 验证失败(用户名为空)
-curl http://localhost:8082/validation/register/invalid-username
-
-# 验证失败(邮箱格式错误)
-curl http://localhost:8082/validation/register/invalid-email
-```
+| 注解 | 说明 | 示例 |
+|------|------|------|
+| `@NotBlank` | 不能为空字符串 | `@NotBlank(message = "不能为空")` |
+| `@Email` | 必须是有效邮箱格式 | `@Email(message = "邮箱格式不正确")` |
+| `@Min` / `@Max` | 数值范围限制 | `@Min(18) @Max(100)` |
+| `@Size` | 字符串/集合长度限制 | `@Size(min = 3, max = 20)` |
+| `@Pattern` | 正则表达式匹配 | `@Pattern(regexp = "^[0-9]+$")` |
 
 ---
 
-### 3. 结果缓存 (Cache)
+### 4. 结果缓存
 
-减少重复调用的网络开销，提升系统性能。
+Dubbo 内置结果缓存功能，减少重复调用，提升系统性能。
 
-**Provider 端**:
+**实现原理**:
+Dubbo 通过 CacheFilter 拦截调用，根据配置的缓存策略缓存方法调用结果。
+
+**Provider 端配置**:
 ```java
 @DubboService(
     interfaceClass = ProductQueryService.class,
-    group = "cache-demo",
-    version = "1.0.0"
+    cache = "lru"
 )
 public class ProductQueryServiceImpl implements ProductQueryService {
     @Override
-    public String getProductInfo(String productId) {
-        // 查询数据库...
-        return "商品信息: " + productId;
+    public String queryProduct(String productId) {
+        // 相同参数只会调用一次
+        return "产品信息";
     }
 }
 ```
 
-**Consumer 端** (启用缓存):
+**Consumer 端配置**:
 ```java
-// LRU 缓存策略
-@DubboReference(
-    interfaceClass = ProductQueryService.class,
-    group = "cache-demo",
-    cache = "lru"  // 最近最少使用，默认 1000 条
-)
-private ProductQueryService cachedProductService;
+// LRU 缓存(最近最少使用)
+@DubboReference(cache = "lru")
+private ProductQueryService lruCacheService;
 
-// 无缓存(用于对比)
-@DubboReference(
-    interfaceClass = ProductQueryService.class,
-    group = "cache-demo"
-)
-private ProductQueryService noCacheProductService;
+// ThreadLocal 缓存(线程隔离)
+@DubboReference(cache = "threadlocal")
+private ProductQueryService threadLocalCacheService;
+
+// JCache 缓存(JSR107标准)
+@DubboReference(cache = "jcache")
+private ProductQueryService jcacheService;
 ```
 
 **缓存策略**:
+
 | 策略 | 说明 | 适用场景 |
 |------|------|----------|
-| `lru` | 最近最少使用，默认 1000 条 | 通用缓存场景 |
-| `threadlocal` | 线程级别缓存 | 同线程多次调用 |
-| `jcache` | JSR107 JCache 集成 | 需要自定义缓存配置 |
-
-**缓存适用场景**:
-- ✅ 读操作(查询): 适合缓存
-- ❌ 写操作(增删改): 不适合缓存
-- ✅ 数据相对静态: 适合缓存
-- ❌ 数据频繁变化: 不适合缓存
-
-**测试接口**:
-```bash
-# 缓存命中测试(多次调用 timestamp 相同)
-curl http://localhost:8082/cache/hit/P001
-
-# 无缓存对比(每次 timestamp 不同)
-curl http://localhost:8082/cache/no-cache/P001
-```
+| `lru` | 最近最少使用淘汰 | 通用缓存场景 |
+| `threadlocal` | 线程本地缓存 | 线程隔离场景 |
+| `jcache` | JSR107 标准缓存 | 需要标准化缓存接口 |
 
 ---
 
-### 4. 异步调用 (Async)
+### 5. 异步调用
 
-使用 CompletableFuture 实现非阻塞异步调用。
+基于 CompletableFuture 的异步非阻塞调用，提升系统吞吐量。
+
+**实现原理**:
+Dubbo 支持异步调用模型，Consumer 发起调用后立即返回 Future 对象，无需阻塞等待结果。
 
 **接口定义**:
 ```java
 public interface AsyncUserService {
+    /**
+     * 异步登录
+     * @return CompletableFuture<String> 异步结果
+     */
     CompletableFuture<String> asyncLogin(String username, String password);
-    String syncLogin(String username, String password);
 }
 ```
 
-**Provider 端**:
+**Provider 端配置**:
 ```java
-@DubboService(
-    interfaceClass = AsyncUserService.class,
-    group = "advanced",
-    version = "1.0.0"
-)
+@DubboService
 public class AsyncUserServiceImpl implements AsyncUserService {
-    private final ExecutorService executorService = Executors.newFixedThreadPool(10);
-
     @Override
     public CompletableFuture<String> asyncLogin(String username, String password) {
-        return CompletableFuture.supplyAsync(() -> {
-            // 异步处理逻辑
-            return username + " 异步登录成功";
-        }, executorService);
+        return CompletableFuture.completedFuture(username + "登录成功");
     }
 }
 ```
 
-**Consumer 端**:
+**Consumer 端配置**:
 ```java
-@DubboReference(
-    interfaceClass = AsyncUserService.class,
-    group = "advanced",
-    version = "1.0.0"
-)
+@DubboReference
 private AsyncUserService asyncUserService;
 
-// 异步调用
-CompletableFuture<String> future = asyncUserService.asyncLogin("admin", "123456");
-future.thenAccept(result -> System.out.println(result));
+public String asyncCall() throws Exception {
+    // 发起异步调用
+    CompletableFuture<String> future = asyncUserService.asyncLogin("admin", "123456");
+    
+    // 继续处理其他业务
+    doOtherWork();
+    
+    // 等待结果
+    return future.get();
+}
+```
+
+**异步模式**:
+
+| 模式 | 说明 | 适用场景 |
+|------|------|----------|
+| CompletableFuture | 返回 Future 对象 | 需要异步处理结果 |
+| 事件通知 | oninvoke/onreturn/onthrow | 需要回调处理 |
+| 参数回调 | 实现 AsyncContext | 服务端异步 |
+
+---
+
+### 6. 泛化调用
+
+无需依赖接口 JAR 包，通过 GenericService 动态调用任意服务。
+
+**实现原理**:
+Dubbo 提供 GenericService 接口，允许 Consumer 通过方法名、参数类型和参数值动态调用服务。
+
+**Consumer 端配置**:
+```java
+// 创建引用配置
+ReferenceConfig<GenericService> reference = new ReferenceConfig<>();
+reference.setInterface("com.zhouByte.api.UserService");
+reference.setVersion("1.0.0");
+reference.setGeneric(true);
+
+// 获取泛化服务
+GenericService genericService = reference.get();
+
+// 调用方法
+Object result = genericService.$invoke(
+    "login",                                    // 方法名
+    new String[]{"java.lang.String", "java.lang.String"}, // 参数类型
+    new Object[]{"admin", "123456"}             // 参数值
+);
+```
+
+**使用场景**:
+- 网关服务统一调用
+- 测试平台动态调用
+- 服务编排场景
+- 跨语言调用
+
+---
+
+### 7. 负载均衡
+
+Dubbo 提供多种负载均衡策略，合理分配服务请求。
+
+**实现原理**:
+Dubbo 在 Consumer 端通过 LoadBalance 扩展点实现负载均衡，根据配置的策略选择 Provider。
+
+**Provider 端配置**:
+```java
+// 随机策略(默认)
+@DubboService(loadbalance = "random")
+public class UserServiceRandomImpl implements UserService {}
+
+// 轮询策略
+@DubboService(loadbalance = "roundrobin")
+public class UserServiceRoundRobinImpl implements UserService {}
+
+// 最少活跃调用
+@DubboService(loadbalance = "leastactive")
+public class UserServiceLeastActiveImpl implements UserService {}
+
+// 一致性哈希
+@DubboService(loadbalance = "consistenthash")
+public class UserServiceConsistentHashImpl implements UserService {}
+```
+
+**Consumer 端配置**:
+```java
+// 在引用端指定负载均衡策略
+@DubboReference(loadbalance = "random")
+private UserService randomUserService;
+
+@DubboReference(loadbalance = "roundrobin")
+private UserService roundrobinUserService;
+```
+
+**负载均衡策略**:
+
+| 策略 | 说明 | 适用场景 |
+|------|------|----------|
+| `random` | 按权重随机调用(默认) | 通用场景 |
+| `roundrobin` | 轮询调用 | 均匀分配请求 |
+| `leastactive` | 最少活跃调用优先 | 服务性能差异大 |
+| `consistenthash` | 一致性哈希 | 相同参数路由到同一Provider |
+
+---
+
+### 8. 集群容错
+
+Dubbo 提供多种集群容错模式，保证服务高可用。
+
+**实现原理**:
+Dubbo 通过 Cluster 扩展点实现集群容错，当调用失败时根据配置的策略进行处理。
+
+**容错模式**:
+
+| 模式 | 说明 | 适用场景 |
+|------|------|----------|
+| `failover` | 失败自动切换(默认) | 读操作，重试其他Provider |
+| `failfast` | 快速失败 | 写操作，立即报错 |
+| `failsafe` | 失败安全 | 日志记录等，忽略异常 |
+| `failback` | 失败自动恢复 | 消息通知，定时重试 |
+| `forking` | 并行调用 | 实时性要求高的读操作 |
+
+**Provider 端配置**:
+```java
+@DubboService(cluster = "failover", retries = 2)
+public class UserServiceImpl implements UserService {}
+```
+
+**Consumer 端配置**:
+```java
+@DubboReference(cluster = "failover", retries = 2)
+private UserService userService;
 ```
 
 ---
 
-### 5. 泛化调用 (Generic)
+### 9. 服务治理
 
-无需依赖接口 JAR，通过接口全限定名动态调用。
+通过版本管理和分组管理，实现服务的路由和灰度发布。
 
-**Provider 端**:
-```java
-@DubboService(
-    interfaceClass = GenericService.class,
-    group = "generic",
-    version = "1.0.0",
-    parameters = {"interface", "com.zhouByte.api.UserService"}
-)
-public class GenericServiceImpl implements GenericService {
-    @Override
-    public Object $invoke(String method, String[] parameterTypes, Object[] args) {
-        if ("userLogin".equals(method)) {
-            return handleUserLogin(args);
-        }
-        throw new GenericException(new UnsupportedOperationException("不支持的方法: " + method));
-    }
-}
-```
+**实现原理**:
+Dubbo 通过 version 和 group 参数实现服务的路由，Consumer 只能调用匹配版本和分组的服务。
 
-**Consumer 端** (手动创建 ReferenceConfig):
-```java
-ReferenceConfig<GenericService> referenceConfig = new ReferenceConfig<>();
-referenceConfig.setInterface("com.zhouByte.api.UserService");
-referenceConfig.setVersion("1.0.0");
-referenceConfig.setGroup("generic");
-referenceConfig.setGeneric("true");  // 开启泛化调用
-referenceConfig.setRegistry(new RegistryConfig("nacos://127.0.0.1:8848"));
-
-GenericService genericService = referenceConfig.get();
-Object result = genericService.$invoke("userLogin", 
-    new String[]{"java.lang.String", "java.lang.String"}, 
-    new Object[]{"admin", "123456"});
-```
-
----
-
-### 6. 可观测性 (Observability)
-
-集成链路追踪、指标收集、日志记录三大可观测性能力。
-
-**Filter SPI 配置** (`META-INF/dubbo/org.apache.dubbo.rpc.Filter`):
-```properties
-metricsFilter=com.zhouByte.observability.MetricsFilter
-tracingFilter=com.zhouByte.observability.TracingFilter
-loggingFilter=com.zhouByte.observability.LoggingFilter
-```
-
-**Filter 实现**:
-```java
-@Activate(group = {CommonConstants.PROVIDER}, order = -11000)
-public class TracingFilter implements Filter {
-    @Override
-    public Result invoke(Invoker<?> invoker, Invocation invocation) {
-        String traceId = UUID.randomUUID().toString();
-        RpcContext.getClientAttachment().setAttachment("traceId", traceId);
-        return invoker.invoke(invocation);
-    }
-}
-```
-
-**服务引用**:
-```java
-@DubboService(
-    interfaceClass = UserService.class,
-    group = "observability",
-    filter = {"tracingFilter", "metricsFilter", "loggingFilter"}
-)
-public class MonitoredUserService implements UserService {
-    // 自动经过三个 Filter 处理
-}
-```
-
----
-
-### 7. 服务治理 (Governance)
-
-支持版本路由、分组路由、灰度发布等治理能力。
-
-**多版本共存**:
+**多版本管理**:
 ```java
 // V1.0.0 基础版本
-@DubboService(interfaceClass = UserService.class, version = "1.0.0", group = "governance-version")
-public class UserServiceV1 implements UserService { }
+@DubboService(version = "1.0.0")
+public class UserServiceV1 implements UserService {}
 
 // V2.0.0 升级版本
-@DubboService(interfaceClass = UserService.class, version = "2.0.0", group = "governance-version")
-public class UserServiceV2 implements UserService { }
+@DubboService(version = "2.0.0")
+public class UserServiceV2 implements UserService {}
 
 // V3.0.0 灰度版本
-@DubboService(interfaceClass = UserService.class, version = "3.0.0-canary", group = "governance-version")
-public class UserServiceV3Canary implements UserService { }
+@DubboService(version = "3.0.0-canary")
+public class UserServiceV3Canary implements UserService {}
 ```
 
-**Consumer 端路由**:
+**Consumer 端配置**:
 ```java
-// 精确调用 V1
-@DubboReference(version = "1.0.0", group = "governance-version")
-private UserService v1UserService;
+// 调用指定版本
+@DubboReference(version = "1.0.0")
+private UserService v1Service;
 
-// 精确调用 V2
-@DubboReference(version = "2.0.0", group = "governance-version")
-private UserService v2UserService;
+@DubboReference(version = "2.0.0")
+private UserService v2Service;
+```
 
-// 通配符调用任意版本
-@DubboReference(version = "*", group = "governance-version")
-private UserService anyVersionUserService;
+**分组管理**:
+```java
+// 按业务分组
+@DubboService(group = "user-service")
+public class UserServiceImpl implements UserService {}
+
+@DubboReference(group = "user-service")
+private UserService userService;
 ```
 
 ---
 
-### 8. 动态配置 (Dynamic Config)
+### 10. 动态配置
 
 支持方法级配置和自定义参数传递。
 
-**Provider 端** (方法级配置):
+**实现原理**:
+Dubbo 允许在 @DubboService 和 @DubboReference 中配置方法级参数，实现细粒度控制。
+
+**Provider 端配置**:
 ```java
 @DubboService(
-    interfaceClass = UserService.class,
-    group = "dynamic-config",
-    version = "1.0.0",
     methods = {
-        @Method(
-            name = "userLogin",
-            timeout = 3000,
-            retries = 2,
-            loadbalance = "random"
-        )
+        @Method(name = "login", timeout = 3000, retries = 2),
+        @Method(name = "register", timeout = 5000, retries = 1)
     }
 )
-public class ConfigurableUserService implements UserService { }
+public class ConfigurableUserService implements UserService {}
 ```
 
-**Consumer 端** (自定义参数):
+**Consumer 端配置**:
 ```java
 @DubboReference(
-    interfaceClass = UserService.class,
-    group = "dynamic-config",
-    check = false,
-    methods = {
-        @Method(name = "userLogin", timeout = 5000, retries = 3)
-    },
-    parameters = {
-        "timeout", "5000",
-        "retries", "3"
-    }
-)
-private UserService dynamicConfigUserService;
-```
-
-**配置优先级** (从高到低):
-1. JVM `-D` 参数
-2. 方法级 `@Method` 注解
-3. 接口级 `@DubboReference` 注解
-4. 全局配置 (`application.yaml`)
-5. 注册中心动态配置 (Nacos Config)
-
----
-
-## 📊 架构说明
-
-### 系统架构图
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    Consumer (消费者层)                        │
-│  ┌─────────────┐  ┌─────────────┐                           │
-│  │ REST API    │  │ HTTP Client  │                           │
-│  │ Controller  │  │ (curl/Postman)│                           │
-│  └──────┬──────┘  └─────────────┘                           │
-│         │ @DubboReference                                   │
-├─────────┼───────────────────────────────────────────────────┤
-│         │ Dubbo Protocol (RPC Call)                         │
-│         ▼                                                   │
-│              ┌──────────────┐                               │
-│              │ Registry      │  ← Service Discovery         │
-│              │ (Nacos/ZK)   │                               │
-│              └──────────────┘                               │
-│         │                                                    │
-├─────────┼───────────────────────────────────────────────────┤
-│         │ @DubboService                                     │
-│         ▼                                                   │
-│                    Provider (提供者层)                       │
-│  ┌─────────────────────────────────────────┐               │
-│  │ UserServiceImpl implements UserService  │               │
-│  │ - userLogin(username, password)         │               │
-│  └─────────────────────────────────────────┘               │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### 数据流说明
-
-1. **Consumer** 通过 `@DubboReference` 注入远程服务接口
-2. **Dubbo Framework** 从注册中心获取 Provider 地址列表
-3. **Load Balancer** 选择一个 Provider 实例（默认随机算法）
-4. **RPC Call** 发送请求到选定的 Provider
-5. **Provider** 执行业务逻辑并返回结果
-6. **Result** 经序列化后返回给 Consumer
-
----
-
-## ⚙️ 配置说明
-
-### Nacos Provider 关键配置
-
-```yaml
-server:
-  port: 8081
-
-spring:
-  application:
-    name: nacos-provider
-  cloud:
-    nacos:
-      config:
-        server-addr: 127.0.0.1:8848
-        namespace: 2cb71f92-6787-40bd-b9df-ccc2be92e0ec  # 命名空间隔离
-      discovery:
-        server-addr: 127.0.0.1:8848
-        namespace: 2cb71f92-6787-40bd-b9df-ccc2be92e0ec
-
-dubbo:
-  registry:
-    address: nacos://${spring.cloud.nacos.config.server-addr}
-  protocol:
-    port: 20880
-    name: dubbo
-  scan:
-    base-packages: com.zhouByte.service  # Dubbo 服务扫描包路径
-```
-
-### Zookeeper Provider 关键配置
-
-```yaml
-spring:
-  application:
-    name: scorpio-zk-provider
-
-dubbo:
-  protocol:
-    name: dubbo
-    port: -1  # 自动分配端口
-  registry:
-    address: zookeeper://127.0.0.1:2181
-  scan:
-    base-packages: com.zhouByte.service
-```
-
-### Consumer 负载均衡配置示例
-
-```java
-@DubboReference(
-    loadbalance = "random",    // 负载均衡策略: random/roundrobin/leastactive/consistenthash
-    cluster = "failover",      // 集群容错: failover/failfast/failsafe/forking
-    retries = 2                // 重试次数
+    timeout = 5000,
+    retries = 2,
+    check = false
 )
 private UserService userService;
 ```
 
 ---
 
-## 🔍 核心代码解析
+### 11. 可观测性
 
-### 1. 服务接口定义 (Interface API)
+通过 Filter SPI 扩展机制，实现链路追踪、指标收集和日志记录。
 
+**实现原理**:
+Dubbo 提供 Filter 扩展点，允许在服务调用前后插入自定义逻辑。
+
+**自定义 Filter**:
 ```java
-// nacos-registry/nacos-interface-api/src/main/java/com/zhouByte/api/UserService.java
-package com.zhouByte.api;
-
-public interface UserService {
-    String userLogin(String username, String password);
-}
-```
-
-**设计原则**：
-- 接口定义应保持简洁，只声明方法签名
-- Provider 和 Consumer 都依赖此模块，确保契约一致
-- 可单独打包为 JAR 供其他项目复用
-
-### 2. 服务实现 (Provider)
-
-```java
-// nacos-registry/nacos-provider/src/main/java/com/zhouByte/service/UserServiceImpl.java
-package com.zhouByte.service;
-
-import com.zhouByte.api.UserService;
-import org.apache.dubbo.config.annotation.DubboService;
-
-@DubboService  // 注册为 Dubbo 服务
-public class UserServiceImpl implements UserService {
-
+@Activate(group = {CommonConstants.PROVIDER, CommonConstants.CONSUMER})
+public class TracingFilter implements Filter {
     @Override
-    public String userLogin(String username, String password) {
-        // 参数校验
-        if (username == null || username.isBlank()) {
-            throw new IllegalArgumentException("Username cannot be null or blank");
+    public Result invoke(Invoker<?> invoker, Invocation invocation) throws RpcException {
+        // 记录调用开始时间
+        long startTime = System.currentTimeMillis();
+        
+        try {
+            return invoker.invoke(invocation);
+        } finally {
+            // 记录调用耗时
+            long duration = System.currentTimeMillis() - startTime;
+            log.info("调用 {} 耗时 {}ms", invocation.getMethodName(), duration);
         }
-        // 业务逻辑
-        return username + "登录成功";
     }
 }
 ```
 
-**关键注解**：
-- `@DubboService`: 将实现类暴露为 Dubbo 服务
-- 自动注册到配置的注册中心
-
-### 3. 服务消费 (Consumer)
-
-```java
-// nacos-registry/nacos-consumer/src/main/java/com/zhouByte/controller/UserController.java
-package com.zhouByte.controller;
-
-import com.zhouByte.api.UserService;
-import org.apache.dubbo.config.annotation.DubboReference;
-import org.springframework.web.bind.annotation.*;
-
-@RestController
-public class UserController {
-
-    @DubboReference(loadbalance = "random", retries = 2)
-    private UserService userService;  // 远程服务引用（由Dubbo注入代理对象）
-
-    @GetMapping("/login/{username}/{password}")
-    public String userLogin(@PathVariable String username,
-                           @PathVariable String password) {
-        return userService.userLogin(username, password);  // 像调用本地方法一样调用远程服务
-    }
-}
+**注册 Filter**:
 ```
-
-**关键点**：
-- `@DubboReference`: 注入远程服务的代理对象
-- 调用方式与本地方法完全相同（透明化 RPC）
-- 支持配置负载均衡、超时、重试等参数
-
----
-
-## 🎯 Nacos vs Zookeeper 对比
-
-| 特性 | Nacos | Zookeeper |
-|------|-------|-----------|
-| **定位** | 服务发现 + 配置管理 | 分布式协调服务 |
-| **CAP理论** | AP（可用性优先） | CP（一致性优先） |
-| **健康检查** | TCP/HTTP/gRPC | 心跳机制 |
-| **配置中心** | ✅ 原生支持 | ❌ 需额外组件 |
-| **动态路由** | ✅ 支持 | ❌ 不支持 |
-| **权重调整** | ✅ 支持 | ❌ 不支持 |
-| **适用场景** | 云原生、微服务 | 大数据、Hadoop生态 |
-| **学习曲线** | 较低 | 较高 |
-| **社区活跃度** | 高（阿里维护） | 高（Apache） |
-
-**推荐选择**：
-- **云原生/Spring Cloud 项目** → 选择 **Nacos**
-- **大数据/Hadoop 生态** → 选择 **Zookeeper**
-
----
-
-## 🐛 常见问题
-
-### Q1: 启动报错 "Connection refused to Nacos"
-
-**原因**: Nacos Server 未启动或端口错误
-
-**解决方案**:
-```bash
-# 1. 检查 Nacos 是否运行
-lsof -i :8848
-
-# 2. 启动 Nacos
-cd /path/to/nacos/bin
-sh startup.sh -m standalone
-
-# 3. 检查防火墙设置
-```
-
-### Q2: Consumer 调用 Provider 超时
-
-**原因**: 网络问题或 Provider 未正常注册
-
-**解决方案**:
-```yaml
-# consumer application.yaml
-dubbo:
-  consumer:
-    timeout: 5000  # 增加超时时间（毫秒）
-    retries: 2    # 设置重试次数
-```
-
-### Q3: Zookeeper 连接失败
-
-**原因**: Zookeeper 未启动或地址错误
-
-**解决方案**:
-```bash
-# 1. 检查 Zookeeper 状态
-zkServer.sh status
-
-# 2. 查看 Zookeeper 日志
-tail -f /path/to/zookeeper/logs/zookeeper.out
-
-# 3. 确认配置文件中的地址
-# address: zookeeper://127.0.0.1:2181
-```
-
-### Q4: 包名修改后编译错误
-
-**解决方案**:
-```bash
-# 清理并重新编译
-mvn clean compile -DskipTests
-
-# 刷新 IDE 缓存
-# IntelliJ IDEA: File -> Invalidate Caches -> Invalidate and Restart
+# META-INF/dubbo/org.apache.dubbo.rpc.Filter
+tracingFilter=com.zhouByte.observability.TracingFilter
+metricsFilter=com.zhouByte.observability.MetricsFilter
+loggingFilter=com.zhouByte.observability.LoggingFilter
 ```
 
 ---
 
-## 📈 性能优化建议
+## 🔌 Dubbo 核心概念
 
-### 1. 序列化优化
-```yaml
-dubbo:
-  protocol:
-    serialization: hessian2  # 推荐 hessian2/kryo
+### Dubbo 协议
+
+Dubbo 默认使用 Dubbo 协议，基于 TCP 长连接，采用 NIO 异步通信模型：
+
+- **单连接复用** - 单个连接支持高并发调用
+- **高效序列化** - Hessian2 序列化，性能优异
+- **异步通信** - 非阻塞 I/O，高吞吐量
+- **负载均衡** - 客户端负载均衡，减少网络开销
+
+### SPI 扩展机制
+
+Dubbo 采用 SPI (Service Provider Interface) 扩展机制，支持灵活的功能定制：
+
+```
+META-INF/dubbo/
+└── org.apache.dubbo.rpc.Filter  # Filter 扩展点
 ```
 
-### 2. 连接池配置
-```yaml
-dubbo:
-  provider:
-    threads: 200  # 根据服务器配置调整线程数
-  consumer:
-    actives: 100  # 最大并发调用数
+**扩展点配置**:
+```
+# 格式: 扩展名=全限定类名
+tracingFilter=com.zhouByte.observability.TracingFilter
 ```
 
-### 3. 异步调用
-```java
-@DubboReference(async = true)
-private UserService userService;
+**常用扩展点**:
 
-CompletableFuture<String> future = userService.userLoginAsync("admin", "123456");
-future.thenAccept(result -> System.out.println(result));
-```
+| 扩展点 | 说明 |
+|--------|------|
+| `Filter` | 过滤器扩展 |
+| `LoadBalance` | 负载均衡扩展 |
+| `Cluster` | 集群容错扩展 |
+| `Protocol` | 协议扩展 |
+| `Registry` | 注册中心扩展 |
+| `Serialization` | 序列化扩展 |
 
 ---
 
-## 🤝 贡献指南
+## 📊 三种注册中心对比
 
-我们非常欢迎你的贡献！请遵循以下步骤：
-
-### 1. Fork 本仓库
-```bash
-git clone https://github.com/<your-username>/scorpio-dubbo.git
-```
-
-### 2. 创建功能分支
-```bash
-git checkout -b feature/amazing-feature
-```
-
-### 3. 提交更改
-```bash
-git commit -m 'feat: add amazing feature'
-```
-
-### 4. 推送到分支
-```bash
-git push origin feature/amazing-feature
-```
-
-### 5. 提交 Pull Request
+| 特性 | Nacos | Zookeeper | Redis |
+|------|-------|-----------|-------|
+| **CAP 理论** | AP + CP 可切换 | CP (强一致性) | AP (最终一致性) |
+| **健康检查** | TCP/HTTP/MySQL | 心跳检测 | TTL 过期机制 |
+| **服务发现** | 推送 + 拉取 | 拉取 | 拉取 |
+| **配置中心** | ✅ 支持 | ❌ 不支持 | ❌ 不支持 |
+| **多语言支持** | ✅ 完善 | ✅ 完善 | ✅ 完善 |
+| **部署复杂度** | 低 | 中 | 低 |
+| **适用场景** | 云原生微服务 | 传统企业环境 | 轻量级服务 |
 
 ---
 
-## 📜 版本历史
+## 📝 版本历史
 
 | 版本 | 日期 | 说明 | 作者 |
 |------|------|------|------|
@@ -1262,45 +782,18 @@ git push origin feature/amazing-feature
 
 ---
 
+## 🤝 贡献指南
+
+欢迎提交 Issue 和 Pull Request！
+
+1. Fork 本仓库
+2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送到分支 (`git push origin feature/AmazingFeature`)
+5. 提交 Pull Request
+
+---
+
 ## 📄 许可证
 
-本项目基于 [MIT License](LICENSE) 开源协议发布。
-
-```
-MIT License
-
-Copyright (c) 2025 zhouByte
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software...
-```
-
----
-
-## 🙏 致谢
-
-- [Apache Dubbo](https://dubbo.apache.org/) - 高性能 Java RPC 框架
-- [Alibaba Nacos](https://nacos.io/) - 动态服务发现和配置管理平台
-- [Apache Zookeeper](https://zookeeper.apache.org/) - 分布式协调服务
-- [Spring Boot](https://spring.io/projects/spring-boot) - 快速应用开发框架
-
----
-
-## 📞 联系方式
-
-- **作者**: zhouByte
-- **GitHub**: [zhouByte-hub](https://github.com/zhouByte-hub)
-- **邮箱**: (待补充)
-
----
-
-<div align="center">
-
-**如果这个项目对你有帮助，请给一个 ⭐ Star 支持一下！**
-
-Made with ❤️ by [zhouByte](https://github.com/zhouByte-hub)
-
-</div>
+本项目采用 MIT 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情
